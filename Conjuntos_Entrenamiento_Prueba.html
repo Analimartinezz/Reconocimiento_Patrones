@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perceptrón con Entrenamiento y Prueba</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h2>Perceptrón: Entrenamiento y Prueba</h2>
+    <canvas id="scatterChart"></canvas>
+    <p id="precision"></p>
+
+    <script>
+        function generarDatos(n = 100) {
+            let datos = [];
+            let etiquetas = [];
+            for (let i = 0; i < n; i++) {
+                let x = Math.random() * 10;
+                let y = Math.random() * 10;
+                let etiqueta = (y > (0.5 * x + 2)) ? 1 : -1;  
+                datos.push([x, y]);
+                etiquetas.push(etiqueta);
+            }
+            return { datos, etiquetas };
+        }
+
+        function dividirDatos(datos, etiquetas, porcentajeEntrenamiento = 0.7) {
+            let nEntrenamiento = Math.floor(datos.length * porcentajeEntrenamiento);
+            let datosEntrenamiento = datos.slice(0, nEntrenamiento);
+            let etiquetasEntrenamiento = etiquetas.slice(0, nEntrenamiento);
+            let datosPrueba = datos.slice(nEntrenamiento);
+            let etiquetasPrueba = etiquetas.slice(nEntrenamiento);
+            return { datosEntrenamiento, etiquetasEntrenamiento, datosPrueba, etiquetasPrueba };
+        }
+
+        function entrenarPerceptron(datos, etiquetas, tasaAprendizaje = 0.01, epocas = 1000) {
+            let w = [Math.random(), Math.random()];
+            let b = Math.random();
+            for (let epoch = 0; epoch < epocas; epoch++) {
+                let errorTotal = 0;
+                for (let i = 0; i < datos.length; i++) {
+                    let x = datos[i];
+                    let y_real = etiquetas[i];
+                    let y_pred = (w[0] * x[0] + w[1] * x[1] + b) >= 0 ? 1 : -1;
+                    let error = y_real - y_pred;
+                    w[0] += tasaAprendizaje * error * x[0];
+                    w[1] += tasaAprendizaje * error * x[1];
+                    b += tasaAprendizaje * error;
+                    errorTotal += Math.abs(error);
+                }
+                if (errorTotal === 0) break;
+            }
+            return { w, b };
+        }
+
+        function evaluarModelo(datos, etiquetas, w, b) {
+            let aciertos = 0;
+            for (let i = 0; i < datos.length; i++) {
+                let x = datos[i];
+                let y_real = etiquetas[i];
+                let y_pred = (w[0] * x[0] + w[1] * x[1] + b) >= 0 ? 1 : -1;
+                if (y_real === y_pred) aciertos++;
+            }
+            return aciertos / datos.length;
+        }
+
+        function graficar(datosEntrenamiento, etiquetasEntrenamiento, datosPrueba, etiquetasPrueba, w, b) {
+            let ctx = document.getElementById('scatterChart').getContext('2d');
+            let dataPositivosEntrenamiento = [];
+            let dataNegativosEntrenamiento = [];
+            let dataPositivosPrueba = [];
+            let dataNegativosPrueba = [];
+
+            datosEntrenamiento.forEach((punto, i) => {
+                let dataset = etiquetasEntrenamiento[i] === 1 ? dataPositivosEntrenamiento : dataNegativosEntrenamiento;
+                dataset.push({ x: punto[0], y: punto[1] });
+            });
+
+            datosPrueba.forEach((punto, i) => {
+                let dataset = etiquetasPrueba[i] === 1 ? dataPositivosPrueba : dataNegativosPrueba;
+                dataset.push({ x: punto[0], y: punto[1] });
+            });
+
+            let x_min = 0;
+            let x_max = 10;
+            let y_min = (-w[0] * x_min - b) / w[1];
+            let y_max = (-w[0] * x_max - b) / w[1];
+
+            new Chart(ctx, {
+                type: 'scatter',
+                data: {
+                    datasets: [
+                        { label: 'Clase 1 (Entrenamiento)', data: dataPositivosEntrenamiento, backgroundColor: 'blue' },
+                        { label: 'Clase -1 (Entrenamiento)', data: dataNegativosEntrenamiento, backgroundColor: 'red' },
+                        { label: 'Clase 1 (Prueba)', data: dataPositivosPrueba, backgroundColor: 'lightblue', pointRadius: 4 },
+                        { label: 'Clase -1 (Prueba)', data: dataNegativosPrueba, backgroundColor: 'pink', pointRadius: 4 },
+                        { 
+                            label: 'Recta', 
+                            data: [ { x: x_min, y: y_min }, { x: x_max, y: y_max } ],
+                            type: 'line',
+                            borderColor: 'green',
+                            borderWidth: 2,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    scales: {
+                        x: { type: 'linear', position: 'bottom', min: 0, max: 10 },
+                        y: { min: 0, max: 10 }
+                    }
+                }
+            });
+        }
+
+        let { datos, etiquetas } = generarDatos();
+        let { datosEntrenamiento, etiquetasEntrenamiento, datosPrueba, etiquetasPrueba } = dividirDatos(datos, etiquetas);
+        let { w, b } = entrenarPerceptron(datosEntrenamiento, etiquetasEntrenamiento);
+        let precision = evaluarModelo(datosPrueba, etiquetasPrueba, w, b);
+
+        document.getElementById("precision").innerText = `Precisión en el conjunto de prueba: ${(precision * 100).toFixed(2)}%`;
+
+        graficar(datosEntrenamiento, etiquetasEntrenamiento, datosPrueba, etiquetasPrueba, w, b);
+    </script>
+</body>
+</html>
