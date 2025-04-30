@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Perceptrón con 40 datos</title>
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 1px solid black; background: #F0F0F0; }
+        .controls { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Perceptrón con 40 datos</h1>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <div class="controls">
+        <button onclick="entrenar()">Entrenar</button>
+    </div>
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+
+        let puntos = [
+            { x: 1, y: 4, clase: 1 }, { x: 1, y: 7, clase: 1 }, { x: 1, y: 9, clase: 1 },
+            { x: 2, y: 5, clase: 1 }, { x: 2, y: 7, clase: 1 },
+            { x: 3, y: 4, clase: 1 }, { x: 3, y: 5, clase: 1 }, { x: 3, y: 6, clase: 1 },
+            { x: 3, y: 7, clase: 1 }, { x: 3, y: 8, clase: 1 }, { x: 3, y: 10, clase: 1 },
+            { x: 4, y: 4, clase: 1 }, { x: 4, y: 5, clase: 1 }, { x: 4, y: 6, clase: 1 },
+            { x: 4, y: 7, clase: 1 }, { x: 4, y: 9, clase: 1 },
+            { x: 5, y: 5, clase: 1 }, { x: 5, y: 6, clase: 1 }, { x: 5, y: 8, clase: 1 },
+            { x: 6, y: 7, clase: 1 },
+            { x: -1, y: -2, clase: -1 }, { x: -2, y: -1, clase: -1 }, { x: -2, y: -2, clase: -1 },
+            { x: -2, y: -3, clase: -1 }, { x: -3, y: -2, clase: -1 }, { x: -3, y: -3, clase: -1 },
+            { x: -3, y: -4, clase: -1 }, { x: -4, y: -1, clase: -1 }, { x: -4, y: -3, clase: -1 },
+            { x: -4, y: -4, clase: -1 }, { x: -4, y: -5, clase: -1 }, { x: -5, y: -2, clase: -1 },
+            { x: -5, y: -3, clase: -1 }, { x: -5, y: -5, clase: -1 }, { x: -5, y: -6, clase: -1 },
+            { x: -6, y: -1, clase: -1 }, { x: -6, y: -2, clase: -1 }, { x: -6, y: -4, clase: -1 },
+            { x: -7, y: -2, clase: -1 }, { x: -7, y: -3, clase: -1 }
+        ];
+
+        let W = [Math.random(), Math.random(), Math.random()];
+
+        function dibujarPlano() {
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+
+            // Dibujar los ejes X y Y
+            ctx.beginPath();
+            ctx.moveTo(200, 0);
+            ctx.lineTo(200, 400);
+            ctx.moveTo(0, 200);
+            ctx.lineTo(400, 200);
+            ctx.stroke();
+
+            // Dibujar marcas de referencia en los ejes
+            ctx.fillStyle = "black";
+            for (let i = -20; i <= 20; i++) {
+                let pos = 200 + i * 10;
+                
+                // Marcas en el eje X
+                if (pos >= 0 && pos <= 400) {
+                    ctx.fillRect(pos, 198, 1, 4);
+                    ctx.fillText(i, pos - 5, 215);
+                }
+                
+                // Marcas en el eje Y
+                if (pos >= 0 && pos <= 400) {
+                    ctx.fillRect(198, pos, 4, 1);
+                    ctx.fillText(-i, 180, pos + 3);
+                }
+            }
+        }
+
+        function dibujarPuntos() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            dibujarPlano();
+            puntos.forEach(({ x, y, clase }) => {
+                ctx.fillStyle = clase === 1 ? "blue" : "green";
+                ctx.beginPath();
+                ctx.arc(200 + x * 10, 200 - y * 10, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function dibujarLinea() {
+            let x1 = -10, y1 = (-W[0] - W[1] * x1) / W[2];
+            let x2 = 10, y2 = (-W[0] - W[1] * x2) / W[2];
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(200 + x1 * 10, 200 - y1 * 10);
+            ctx.lineTo(200 + x2 * 10, 200 - y2 * 10);
+            ctx.stroke();
+        }
+
+        function entrenar() {
+            let aprendido = false;
+            while (!aprendido) {
+                aprendido = true;
+                for (let { x, y, clase } of puntos) {
+                    let salida = Math.sign(W[0] + W[1] * x + W[2] * y);
+                    if (salida !== clase) {
+                        W[0] += clase;
+                        W[1] += clase * x;
+                        W[2] += clase * y;
+                        aprendido = false;
+                    }
+                }
+            }
+            dibujarPuntos();
+            dibujarLinea();
+        }
+
+        dibujarPuntos();
+    </script>
+</body>
+</html>

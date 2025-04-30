@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Perceptrón Interactivo</title>
+    <style>
+        body { display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 1px solid black; background: #D3D3D3; margin-bottom: 10px; }
+        .controls { margin-top: 10px; }
+        .boton {
+            text-decoration: none;
+            padding: 5px;
+            font-weight: 600;
+            font-size: 15px;
+            color: #ffffff;
+            background-color: #1883ba;
+            border-radius: 6px;
+            border: 2px solid #0016b0;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Perceptrón Interactivo</h1>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <div>
+        <label for="clase">Clase (1 o -1): </label>
+        <input type="number" id="clase" min="-1" max="1" value="1">
+    </div>
+    <div class="controls">
+        <button class="boton" id="llena_tabla">Llenar Tabla</button>
+        <button class="boton" id="btn_salida">Mostrar Arreglo</button>
+        <button class="boton" onclick="entrenar()">Entrenar</button>
+    </div>
+    <p id="salida"></p>
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        let puntos = [];
+        let W = [Math.random(), Math.random(), Math.random()];
+        
+        function dibujarPlano() {
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 1;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.beginPath();
+            ctx.moveTo(200, 0);
+            ctx.lineTo(200, 400);
+            ctx.moveTo(0, 200);
+            ctx.lineTo(400, 200);
+            ctx.stroke();
+        }
+        
+        function dibujarPuntos() {
+            dibujarPlano();
+            puntos.forEach(({ x, y, clase }) => {
+                ctx.fillStyle = clase === 1 ? "blue" : "green";
+                ctx.beginPath();
+                ctx.arc(200 + x * 10, 200 - y * 10, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function dibujarLinea() {
+            let x1 = -10, y1 = (-W[0] - W[1] * x1) / W[2];
+            let x2 = 10, y2 = (-W[0] - W[1] * x2) / W[2];
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(200 + x1 * 10, 200 - y1 * 10);
+            ctx.lineTo(200 + x2 * 10, 200 - y2 * 10);
+            ctx.stroke();
+        }
+        
+        function entrenar() {
+            let aprendido = false;
+            while (!aprendido) {
+                aprendido = true;
+                for (let { x, y, clase } of puntos) {
+                    let salida = Math.sign(W[0] + W[1] * x + W[2] * y);
+                    if (salida !== clase) {
+                        W[0] += clase;
+                        W[1] += clase * x;
+                        W[2] += clase * y;
+                        aprendido = false;
+                    }
+                }
+            }
+            dibujarPuntos();
+            dibujarLinea();
+        }
+        
+        canvas.addEventListener("click", function (evt) {
+            let rect = canvas.getBoundingClientRect();
+            let x = Math.round((evt.clientX - rect.left - 200) / 10);
+            let y = Math.round((200 - (evt.clientY - rect.top)) / 10);
+            let clase = parseInt(document.getElementById("clase").value);
+            puntos.push({ x, y, clase });
+            dibujarPuntos();
+        });
+        
+        document.getElementById("llena_tabla").addEventListener("click", function () {
+            let salida = "<table border='1'><tr><th>X</th><th>Y</th><th>Clase</th></tr>";
+            puntos.forEach(({ x, y, clase }) => {
+                salida += `<tr><td>${x}</td><td>${y}</td><td>${clase}</td></tr>`;
+            });
+            salida += "</table>";
+            document.getElementById("salida").innerHTML = salida;
+        });
+        
+        document.getElementById("btn_salida").addEventListener("click", function () {
+            document.getElementById("salida").innerText = JSON.stringify(puntos);
+        });
+        
+        dibujarPlano();
+    </script>
+</body>
+</html>
